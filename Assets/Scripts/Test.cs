@@ -13,18 +13,6 @@ public class Test : MonoBehaviour
   private const string UrlCreate = Url + "get_and_create";
   private const string UrlJoin   = Url + "get";
 
-  // socket status
-  private enum socketStatus {
-    Ready,
-    Connecting,
-    Connect,
-    Closing,
-    Close = Ready
-  }
-  private socketStatus wsStatus = socketStatus.Ready;
-
-  private WebSocket ws;
-
   [SerializeField] private InputField _inputChat;
   [SerializeField] private InputField _inputRoomNo;
 
@@ -59,6 +47,12 @@ public class Test : MonoBehaviour
   }
 
   public void OnButtonLeave() {
+    byte[] d = BitConverter.GetBytes(true);
+    byte[] result = makeData(1, d);
+    sock.Send(result, callbackLeave);
+  }
+
+  private void callbackLeave(bool b) {
     Action cb = () => Debug.Log("close connetion safety.");
     sock.Close(cb);
   }

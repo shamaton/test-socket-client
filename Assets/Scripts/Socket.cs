@@ -28,6 +28,8 @@ public class Socket : MonoBehaviour {
   // callbacks
   // TODO : 
 
+  public bool CanUse { get { return (ws != null && ws.IsAlive); } }
+
   void Start() {
     // make callback
     cbSendDefault = (r) => {/* do nothing */};
@@ -57,7 +59,7 @@ public class Socket : MonoBehaviour {
   }
 
   public void Send(byte[] sendData, Action<bool> cb = null) {
-    if (!ws.IsAlive) {
+    if (ws == null || !ws.IsAlive) {
       Debug.LogWarning("socket is not connected !! canceled data sending.");
       return;
     }
@@ -70,14 +72,7 @@ public class Socket : MonoBehaviour {
 
   public void Close(Action cb) {
     if (ws != null && ws.IsAlive) {
-      var d = BitConverter.GetBytes(true);
-      var result = makeData(1, d);
-
-      // leave and close
-      Action<bool> cbClose = (b) => {
-        ws.CloseAsync(CloseStatusCode.Normal, "socket is unneccesary");
-      };
-      ws.SendAsync(result, cbClose);
+      ws.CloseAsync(CloseStatusCode.Normal, "socket is unneccesary");
     }
   }
 
@@ -149,29 +144,8 @@ public class Socket : MonoBehaviour {
     }
   }
 
-  private byte[] makeData(int no, object obj) {
-
-    ObjectPacker packer = new MsgPack.ObjectPacker();
-    var data = packer.Pack(obj);
-    var info = BitConverter.GetBytes(no);
-
-    byte[] result = new byte[info.Length + data.Length];
-
-    // first : command
-    Buffer.BlockCopy(info, 0, result, 0, info.Length);
-
-    // second : data
-    Buffer.BlockCopy(data, 0, result, info.Length, data.Length);
-
-    return result;
-  }
-
   void OnDestroy() {
     if (ws != null) {
-      var d = BitConverter.GetBytes(true);
-      var result = makeData(1, d); 
-      ws.Send(result);
-
       closeAtOnce(CloseStatusCode.Normal, "destory client");
     }
 
