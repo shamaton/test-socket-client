@@ -2,9 +2,9 @@
 using UnityEngine.UI;
 using System;
 using System.Collections;
-using WebSocketSharp;
 
 using MsgPack;
+using Network.Socket;
 
 public class Test : MonoBehaviour
 {
@@ -16,12 +16,12 @@ public class Test : MonoBehaviour
   [SerializeField] private InputField _inputChat;
   [SerializeField] private InputField _inputRoomNo;
 
-  private Socket sock;
+  private SocketManager sock;
 
 	// Use this for initialization
 	void Start () {
     GameObject obj = new GameObject("Socket");
-    sock = obj.AddComponent<Socket>();
+    sock = obj.AddComponent<SocketManager>();
 	  // データやり取り登録
 	}
 
