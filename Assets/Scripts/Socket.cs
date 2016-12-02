@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#define DEBUG_PRINT_SOCKET
+
+using UnityEngine;
 using System;
 using System.Collections;
 
@@ -81,22 +83,22 @@ public class Socket : MonoBehaviour {
 
 
   private void onOpen(object obj, EventArgs e) {
-    Debug.Log("onOpen!!");
+    _log("onOpen!!");
   }
 
   private void onClose(object obj, CloseEventArgs e) {
-    Debug.Log("onClose!!");
+    _log("onClose!!");
     if (e.Code != (ushort)CloseStatusCode.Normal) {
       Debug.LogError("[ERROR] session refused : " + e.Reason);
       // TODO : error callback
     }
-    Debug.Log("close state  : " + e.Code);
-    Debug.Log("close reason : " + e.Reason);
+    _log("close state  : " + e.Code);
+    _log("close reason : " + e.Reason);
     ws = null;
   }
 
   private void onError(object obj, ErrorEventArgs e) {
-    Debug.Log("recieve error!! " + e.Message);
+    Debug.LogError("recieve error!! " + e.Message);
   }
 
   private void onMessage(object obj, MessageEventArgs e) {
@@ -109,8 +111,8 @@ public class Socket : MonoBehaviour {
 
       var unpack = new ObjectPacker();
       var message = unpack.Unpack<string>(data);
-      Debug.Log("message length : " + e.RawData.Length);
-      Debug.Log("message : " + message);
+      _log("message length : " + e.RawData.Length);
+      _log("message : " + message);
     } else if (e.IsText) {
     } else if (e.IsPing) {
     }
@@ -130,7 +132,7 @@ public class Socket : MonoBehaviour {
       if (ws != null && ws.IsAlive) {
         bool ok = ws.Ping();
         if (!ok) {
-          Debug.Log("ping ng...");
+          _log("ping ng...");
           count++;
           // error if count is over.
           if (count >= PingErrorMaxCount) {
@@ -140,7 +142,7 @@ public class Socket : MonoBehaviour {
           }
         } else {
           count = 0;
-          Debug.Log("ping ok...");
+          _log("ping ok...");
         }
       }
       yield return new WaitForSeconds(3);
@@ -175,5 +177,11 @@ public class Socket : MonoBehaviour {
 
     // stop keepAlive
     StopCoroutine(keepAliveCor);
+  }
+
+  private void _log(object message) {
+    #if DEBUG_PRINT_SOCKET
+    Debug.Log(message);
+    #endif
   }
 }
