@@ -40,7 +40,6 @@ public class Test : MonoBehaviour
   public void OnButtonChat() {
     if (_inputChat.text.Length > 0) {
       var result = makeData(2, _inputChat.text);
-      //ws.Send(result);
       sock.Send(result);
     }
   }
@@ -48,7 +47,6 @@ public class Test : MonoBehaviour
   public void OnButtonCreate() {
     Action cb = () => Debug.Log("Socket connect!!");
     sock.Connect(UrlCreate, cb);
-    //initializeSocket(UrlCreate);
   }
 
   public void OnButtonEnter() {
@@ -58,127 +56,12 @@ public class Test : MonoBehaviour
     string url = UrlJoin + "?room_id=" + roomId;
     Action cb = () => Debug.Log("Socket connect!!");
     sock.Connect(url, cb);
-    //initializeSocket(url);
   }
 
   public void OnButtonLeave() {
-    //var result = makeData(1, "d"); 
-    //ws.Send(result);
-
     Action cb = () => Debug.Log("close connetion safety.");
     sock.Close(cb);
-    //StartCoroutine(closeProc(cb));
   }
-
-  /*
-  private void initializeSocket(string url) {
-    if (ws != null) return;
-
-    ws = new WebSocket(UrlCreate);
-    ws.OnMessage += onMessage;
-
-    // status ready
-    wsStatus = socketStatus.Ready;
-
-    Action cb = () => Debug.Log("Socket connect!!");
-    StartCoroutine(connectProc(cb));
-  }
-
-  private IEnumerator connectProc(Action cb)
-  {
-    float timer = 0f;
-    float waitTime = 10f;
-    // start connect
-    ws.ConnectAsync();
-    wsStatus = socketStatus.Connecting;
-
-    // waiting
-    while (!ws.IsAlive)
-    {
-      timer += Time.deltaTime;
-      if (timer > waitTime) {
-        Debug.Log("connect time over!!");
-        closeAtOnce();
-        // TODO : callback error
-        yield break;
-      }
-      yield return 0;
-    }
-
-    // callback
-    cb();
-    wsStatus = socketStatus.Connect;
-
-    // start ping
-    Action cbPing = () => {
-      Debug.Log("ping error!!");
-      closeAtOnce();
-    };
-    StartCoroutine(ping(cbPing));
-  }
-
-  private IEnumerator closeProc(Action cb)
-  {
-    // close connect
-    ws.CloseAsync();
-    wsStatus = socketStatus.Closing;
-
-    // waiting
-    while (ws.IsAlive)
-    {
-      yield return new WaitForSeconds(0.1f);
-    }
-
-    // callback
-    cb();
-
-    ws = null;
-    wsStatus = socketStatus.Close;
-  }
-
-  private void closeAtOnce() {
-    if (ws != null) {
-      ws.Close();
-      ws = null;
-      wsStatus = socketStatus.Close;
-    }
-  }
-
-  private void onMessage(object obj, MessageEventArgs e) {
-    byte[] cmdId = new byte[4];
-    byte[] data = new byte[e.RawData.Length - 4];
-
-
-    Buffer.BlockCopy(e.RawData, 4, data, 0, data.Length);
-
-    var unpack = new ObjectPacker();
-    var message = unpack.Unpack<string>(data);
-    Debug.Log("message length : " + e.RawData.Length);
-    Debug.Log("message : " + message);
-  }
-
-  private IEnumerator ping(Action cbError) {
-    int count = 0;
-    int maxCount = 3;
-
-    while (true) {
-      var ok = ws.Ping();
-      if (!ok) {
-        Debug.Log("ping ng...");
-        // callback
-        count++;
-        if (count >= maxCount) {
-          cbError();
-          yield break;
-        }
-      } else {
-        count = 0;
-        Debug.Log("ping ok...");
-      }
-      yield return new WaitForSeconds(3);
-    }
-  }
-  */
 
   private byte[] makeData(int no, object obj) {
 
