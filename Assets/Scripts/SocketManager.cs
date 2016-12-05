@@ -28,6 +28,8 @@ namespace Network {
       private Action<bool> cbSendDefault;
 
       // callbacks
+      public Action cbOpen;
+      public Action<bool> cbClose;
       // TODO : 
 
       public bool CanUse { get { return (ws != null && ws.IsAlive); } }
@@ -42,9 +44,10 @@ namespace Network {
           closeAtOnce(CloseStatusCode.Abnormal, "keep alive failed");
         };
         keepAliveCor = StartCoroutine(keepAlive(cbError));
+        StartCoroutine(callbackNotify());
       }
-
-      public void Connect(string url, Action cb) {
+        
+      public void Connect(string url) {
         if (ws != null) {
           Debug.LogWarning("socket still exists!!");
           return;
@@ -72,7 +75,7 @@ namespace Network {
         ws.SendAsync(sendData, cb);
       }
 
-      public void Close(Action cb) {
+      public void Close() {
         if (ws != null && ws.IsAlive) {
           ws.CloseAsync(CloseStatusCode.Normal, "socket is unneccesary");
         }
@@ -81,6 +84,13 @@ namespace Network {
 
       private void onOpen(object obj, EventArgs e) {
         _log("onOpen!!");
+        // callback
+        isOpenCallback = true;
+        /*
+        if (cbOpen != null) {
+          cbOpen();
+        }
+        */
       }
 
       private void onClose(object obj, CloseEventArgs e) {
@@ -92,6 +102,15 @@ namespace Network {
         _log("close state  : " + e.Code);
         _log("close reason : " + e.Reason);
         ws = null;
+
+        // callback
+        isCloseCallback = true;
+        closeCode = e.Code;
+        /*
+        if (cbClose != null) {
+          cbClose(e.Code == (ushort)CloseStatusCode.Normal);
+        }
+        */
       }
 
       private void onError(object obj, ErrorEventArgs e) {
@@ -119,6 +138,28 @@ namespace Network {
         // close socket
         if (ws != null) {     
           ws.Close(code, reason);
+        }
+      }
+
+      private bool isOpenCallback;
+      private bool isCloseCallback;
+      private ushort closeCode;
+
+      private IEnumerator callbackNotify() {
+        while (true) {
+          if (isOpenCallback) {
+            isOpenCallback = false;
+            if (cbOpen != null) {
+              cbOpen();
+            }
+          }
+          if (isCloseCallback) {
+            isCloseCallback = false;
+            if (cbClose != null) {
+              cbClose(closeCode == (ushort)CloseStatusCode.Normal);
+            }
+          }
+          yield return 0;
         }
       }
 

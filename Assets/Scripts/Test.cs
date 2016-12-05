@@ -15,6 +15,10 @@ public class Test : MonoBehaviour
 
   [SerializeField] private InputField _inputChat;
   [SerializeField] private InputField _inputRoomNo;
+  [SerializeField] private Button buttonChat;
+  [SerializeField] private Button buttonRoomNo;
+  [SerializeField] private Button buttonCreate;
+  [SerializeField] private Button buttonLeave;
 
   private SocketManager sock;
 
@@ -22,6 +26,14 @@ public class Test : MonoBehaviour
 	void Start () {
     GameObject obj = new GameObject("Socket");
     sock = obj.AddComponent<SocketManager>();
+
+    setActiveChat(false);
+    setActiveRoomNo(true);
+
+    // set callback to this.
+    sock.cbOpen  = callbackSocketOpen;
+    sock.cbClose = callbackSocketClose;
+
 	  // データやり取り登録
 	}
 
@@ -33,8 +45,8 @@ public class Test : MonoBehaviour
   }
 
   public void OnButtonCreate() {
-    Action cb = () => Debug.Log("Socket connect!!");
-    sock.Connect(UrlCreate, cb);
+    setActiveRoomNo(false);
+    sock.Connect(UrlCreate);
   }
 
   public void OnButtonEnter() {
@@ -42,19 +54,36 @@ public class Test : MonoBehaviour
 
     string roomId = _inputRoomNo.text;
     string url = UrlJoin + "?room_id=" + roomId;
-    Action cb = () => Debug.Log("Socket connect!!");
-    sock.Connect(url, cb);
+    setActiveRoomNo(false);
+    sock.Connect(url);
   }
 
   public void OnButtonLeave() {
     byte[] d = BitConverter.GetBytes(true);
     byte[] result = makeData(1, d);
+    setActiveChat(false);
     sock.Send(result, callbackLeave);
   }
 
   private void callbackLeave(bool b) {
-    Action cb = () => Debug.Log("close connetion safety.");
-    sock.Close(cb);
+    setActiveRoomNo(true);
+    sock.Close();
+  }
+
+  private void setActiveChat(bool isActive) {
+    _inputChat.interactable = isActive;
+    buttonChat.interactable = isActive;
+    _inputChat.text = "";
+    buttonLeave.interactable = isActive;
+  }
+
+  private void setActiveRoomNo(bool isActive) {
+    _inputRoomNo.interactable = isActive;
+    buttonRoomNo.interactable = isActive;
+    if (isActive) {
+      _inputRoomNo.text = "";
+    }
+    buttonCreate.interactable = isActive;
   }
 
   private byte[] makeData(int no, object obj) {
@@ -72,5 +101,17 @@ public class Test : MonoBehaviour
     Buffer.BlockCopy(data, 0, result, info.Length, data.Length);
 
     return result;
+  }
+
+  private void callbackSocketOpen() {
+    Debug.Log("ooooooooooooopen");
+    setActiveChat(true);
+  }
+
+  private void callbackSocketClose(bool wasCloseSafe) {
+    if (wasCloseSafe) {
+      Debug.Log("close connection safety.");
+    }
+    setActiveRoomNo(true);
   }
 }
