@@ -66,6 +66,7 @@ public class Test : MonoBehaviour
   }
 
   private void callbackLeave(bool b) {
+    Debug.Log("callback lievae");
     setActiveRoomNo(true);
     sock.Close();
   }

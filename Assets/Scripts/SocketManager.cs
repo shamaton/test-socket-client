@@ -3,6 +3,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 using MsgPack;
 using WebSocketSharp;
@@ -31,6 +32,9 @@ namespace Network {
       public Action cbOpen;
       public Action<bool> cbClose;
       // TODO : 
+
+      // data queue
+      private List<byte[]> dataQueue = new List<byte[]>();
 
       public bool CanUse { get { return (ws != null && ws.IsAlive); } }
 
@@ -63,6 +67,9 @@ namespace Network {
         ws.ConnectAsync();
       }
 
+      private ulong sendNo = 0;
+      private Dictionary<ulong, Action<bool>> sendCallbackMap = new Dictionary<ulong, Action<bool>>();
+
       public void Send(byte[] sendData, Action<bool> cb = null) {
         if (ws == null || !ws.IsAlive) {
           Debug.LogWarning("socket is not connected !! canceled data sending.");
@@ -70,9 +77,15 @@ namespace Network {
         }
 
         // if callback is not defined
-        if (cb == null) cb = cbSendDefault;
+        Action<bool> cbAsync = cbSendDefault;
+        if (cb != null) {
+          ulong no = ++sendNo;
+          cbAsync = (b) => {
+            sendCallbackMap[no] = cb;
+          };
+        }
         // send async
-        ws.SendAsync(sendData, cb);
+        ws.SendAsync(sendData, cbAsync);
       }
 
       public void Close() {
@@ -153,6 +166,17 @@ namespace Network {
               cbOpen();
             }
           }
+          // TODO : maybe divide code better?
+          List<ulong> removes = new List<ulong>();
+          foreach (ulong key in sendCallbackMap.Keys) {
+            var cb = sendCallbackMap[key];
+            cb(true);
+            removes.Add(key);
+          }
+          foreach(ulong r in removes) {
+            sendCallbackMap.Remove(r);
+          }
+
           if (isCloseCallback) {
             isCloseCallback = false;
             if (cbClose != null) {
