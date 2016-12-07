@@ -25,9 +25,6 @@ namespace Network {
       // keep alive
       private Coroutine keepAliveCor;
 
-      // default callback send
-      private Action<bool> cbSendDefault;
-
       // callbacks
       public Action cbOpen;
       public Action<bool> cbClose;
@@ -39,9 +36,6 @@ namespace Network {
       public bool CanUse { get { return (ws != null && ws.IsAlive); } }
 
       void Start() {
-        // make callback
-        cbSendDefault = (r) => {/* do nothing */};
-
         // ping routine
         Action cbError = () => {
           Debug.LogError("keep alive failed!! close connection.");
@@ -77,7 +71,7 @@ namespace Network {
         }
 
         // if callback is not defined
-        Action<bool> cbAsync = cbSendDefault;
+        Action<bool> cbAsync = null;
         if (cb != null) {
           ulong no = ++sendNo;
           cbAsync = (b) => {
@@ -87,6 +81,15 @@ namespace Network {
         // send async
         ws.SendAsync(sendData, cbAsync);
       }
+
+      public void Send(string sendStr, Action<bool> cb = null) {
+        if (ws == null || !ws.IsAlive) {
+          Debug.LogWarning("socket is not connected !! canceled string sending.");
+          return;
+        }
+        ws.SendAsync(sendStr, null);
+      }
+
 
       public void Close() {
         if (ws != null && ws.IsAlive) {
@@ -143,6 +146,7 @@ namespace Network {
           _log("message length : " + e.RawData.Length);
           _log("message : " + message);
         } else if (e.IsText) {
+          _log("string message : " + e.Data);
         } else if (e.IsPing) {
         }
       }

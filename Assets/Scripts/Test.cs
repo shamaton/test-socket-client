@@ -39,8 +39,9 @@ public class Test : MonoBehaviour
 
   public void OnButtonChat() {
     if (_inputChat.text.Length > 0) {
-      var result = makeData(2, _inputChat.text);
-      sock.Send(result);
+      //var result = makeData(2, _inputChat.text);
+      //sock.Send(result);
+      sock.Send(_inputChat.text);
     }
   }
 
