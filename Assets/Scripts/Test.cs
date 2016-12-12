@@ -19,6 +19,7 @@ public class Test : MonoBehaviour
   [SerializeField] private Button buttonRoomNo;
   [SerializeField] private Button buttonCreate;
   [SerializeField] private Button buttonLeave;
+  [SerializeField] private Text ReceiveMessage;
 
   private SocketManager sock;
 
@@ -33,6 +34,7 @@ public class Test : MonoBehaviour
     // set callback to this.
     sock.cbOpen  = callbackSocketOpen;
     sock.cbClose = callbackSocketClose;
+    sock.cbMessageString = callbackMessageString;
 
 	  // データやり取り登録
 	}
@@ -115,5 +117,9 @@ public class Test : MonoBehaviour
       Debug.Log("close connection safety.");
     }
     setActiveRoomNo(true);
+  }
+
+  private void callbackMessageString(string str) {
+    ReceiveMessage.text = str;
   }
 }

@@ -28,10 +28,12 @@ namespace Network {
       // callbacks
       public Action cbOpen;
       public Action<bool> cbClose;
+      public Action<string> cbMessageString;
       // TODO : 
 
       // data queue
       private List<byte[]> dataQueue = new List<byte[]>();
+      private List<string> messageQueue = new List<string>();
 
       public bool CanUse { get { return (ws != null && ws.IsAlive); } }
 
@@ -146,7 +148,7 @@ namespace Network {
           _log("message length : " + e.RawData.Length);
           _log("message : " + message);
         } else if (e.IsText) {
-          _log("string message : " + e.Data);
+          messageQueue.Add(e.Data);
         } else if (e.IsPing) {
         }
       }
@@ -179,6 +181,10 @@ namespace Network {
           }
           foreach(ulong r in removes) {
             sendCallbackMap.Remove(r);
+          }
+
+          foreach(string s in messageQueue) {
+            cbMessageString(s);
           }
 
           if (isCloseCallback) {
