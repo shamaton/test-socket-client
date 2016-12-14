@@ -186,6 +186,7 @@ namespace Network {
           foreach(string s in messageQueue) {
             cbMessageString(s);
           }
+          messageQueue.Clear();
 
           if (isCloseCallback) {
             isCloseCallback = false;
@@ -214,7 +215,7 @@ namespace Network {
               }
             } else {
               count = 0;
-              _log("ping ok...");
+              //_log("ping ok...");
             }
           }
           yield return new WaitForSeconds(3);
