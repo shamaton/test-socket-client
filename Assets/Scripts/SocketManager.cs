@@ -3,6 +3,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 using MsgPack;
 using WebSocketSharp;
@@ -24,27 +25,34 @@ namespace Network {
       // keep alive
       private Coroutine keepAliveCor;
 
-      // default callback send
-      private Action<bool> cbSendDefault;
-
       // callbacks
-      // TODO : 
+      public Action         cbOpen;
+      public Action<bool>   cbClose;
+      public Action<string> cbMessageString;
+      public Action<byte[]> cbMessage;
+
+      // for observe
+      private bool isOpenCallback;
+      private bool isCloseCallback;
+      private ushort closeCode;
+
+      // data queue
+      private List<byte[]> dataQueue = new List<byte[]>();
+      private List<string> messageQueue = new List<string>();
 
       public bool CanUse { get { return (ws != null && ws.IsAlive); } }
 
       void Start() {
-        // make callback
-        cbSendDefault = (r) => {/* do nothing */};
-
         // ping routine
         Action cbError = () => {
           Debug.LogError("keep alive failed!! close connection.");
           closeAtOnce(CloseStatusCode.Abnormal, "keep alive failed");
         };
         keepAliveCor = StartCoroutine(keepAlive(cbError));
+        StartCoroutine(observeForCallback());
       }
-
-      public void Connect(string url, Action cb) {
+        
+      public void Connect(string url) {
         if (ws != null) {
           Debug.LogWarning("socket still exists!!");
           return;
@@ -60,6 +68,9 @@ namespace Network {
         ws.ConnectAsync();
       }
 
+      private ulong sendNo = 0;
+      private Dictionary<ulong, Action<bool>> sendCallbackMap = new Dictionary<ulong, Action<bool>>();
+
       public void Send(byte[] sendData, Action<bool> cb = null) {
         if (ws == null || !ws.IsAlive) {
           Debug.LogWarning("socket is not connected !! canceled data sending.");
@@ -67,12 +78,27 @@ namespace Network {
         }
 
         // if callback is not defined
-        if (cb == null) cb = cbSendDefault;
+        Action<bool> cbAsync = null;
+        if (cb != null) {
+          ulong no = ++sendNo;
+          cbAsync = (b) => {
+            sendCallbackMap[no] = cb;
+          };
+        }
         // send async
-        ws.SendAsync(sendData, cb);
+        ws.SendAsync(sendData, cbAsync);
       }
 
-      public void Close(Action cb) {
+      public void Send(string sendStr, Action<bool> cb = null) {
+        if (ws == null || !ws.IsAlive) {
+          Debug.LogWarning("socket is not connected !! canceled string sending.");
+          return;
+        }
+        ws.SendAsync(sendStr, null);
+      }
+
+
+      public void Close() {
         if (ws != null && ws.IsAlive) {
           ws.CloseAsync(CloseStatusCode.Normal, "socket is unneccesary");
         }
@@ -81,6 +107,8 @@ namespace Network {
 
       private void onOpen(object obj, EventArgs e) {
         _log("onOpen!!");
+        // set callback
+        isOpenCallback = true;
       }
 
       private void onClose(object obj, CloseEventArgs e) {
@@ -92,6 +120,10 @@ namespace Network {
         _log("close state  : " + e.Code);
         _log("close reason : " + e.Reason);
         ws = null;
+
+        // set callback
+        isCloseCallback = true;
+        closeCode = e.Code;
       }
 
       private void onError(object obj, ErrorEventArgs e) {
@@ -100,17 +132,9 @@ namespace Network {
 
       private void onMessage(object obj, MessageEventArgs e) {
         if (e.IsBinary) {
-          byte[] cmdId = new byte[4];
-          byte[] data = new byte[e.RawData.Length - 4];
-
-
-          Buffer.BlockCopy(e.RawData, 4, data, 0, data.Length);
-
-          var unpack = new ObjectPacker();
-          var message = unpack.Unpack<string>(data);
-          _log("message length : " + e.RawData.Length);
-          _log("message : " + message);
+          dataQueue.Add(e.RawData);
         } else if (e.IsText) {
+          messageQueue.Add(e.Data);
         } else if (e.IsPing) {
         }
       }
@@ -119,6 +143,45 @@ namespace Network {
         // close socket
         if (ws != null) {     
           ws.Close(code, reason);
+        }
+      }
+
+      private IEnumerator observeForCallback() {
+        while (true) {
+          if (isOpenCallback) {
+            isOpenCallback = false;
+            if (cbOpen != null) {
+              cbOpen();
+            }
+          }
+          // TODO : maybe divide code better?
+          List<ulong> removes = new List<ulong>();
+          foreach (ulong key in sendCallbackMap.Keys) {
+            var cb = sendCallbackMap[key];
+            cb(true);
+            removes.Add(key);
+          }
+          foreach(ulong r in removes) {
+            sendCallbackMap.Remove(r);
+          }
+
+          foreach(var d in dataQueue) {
+            cbMessage(d);
+          }
+          dataQueue.Clear();
+
+          foreach(string s in messageQueue) {
+            cbMessageString(s);
+          }
+          messageQueue.Clear();
+
+          if (isCloseCallback) {
+            isCloseCallback = false;
+            if (cbClose != null) {
+              cbClose(closeCode == (ushort)CloseStatusCode.Normal);
+            }
+          }
+          yield return 0;
         }
       }
 
@@ -139,7 +202,7 @@ namespace Network {
               }
             } else {
               count = 0;
-              _log("ping ok...");
+              //_log("ping ok...");
             }
           }
           yield return new WaitForSeconds(3);
@@ -147,6 +210,7 @@ namespace Network {
       }
 
       void OnDestroy() {
+        // TODO : check closing
         if (ws != null) {
           closeAtOnce(CloseStatusCode.Normal, "destory client");
         }
