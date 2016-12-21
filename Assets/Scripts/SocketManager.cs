@@ -26,10 +26,15 @@ namespace Network {
       private Coroutine keepAliveCor;
 
       // callbacks
-      public Action cbOpen;
-      public Action<bool> cbClose;
+      public Action         cbOpen;
+      public Action<bool>   cbClose;
       public Action<string> cbMessageString;
-      // TODO : 
+      public Action<byte[]> cbMessage;
+
+      // for observe
+      private bool isOpenCallback;
+      private bool isCloseCallback;
+      private ushort closeCode;
 
       // data queue
       private List<byte[]> dataQueue = new List<byte[]>();
@@ -44,7 +49,7 @@ namespace Network {
           closeAtOnce(CloseStatusCode.Abnormal, "keep alive failed");
         };
         keepAliveCor = StartCoroutine(keepAlive(cbError));
-        StartCoroutine(callbackNotify());
+        StartCoroutine(observeForCallback());
       }
         
       public void Connect(string url) {
@@ -102,13 +107,8 @@ namespace Network {
 
       private void onOpen(object obj, EventArgs e) {
         _log("onOpen!!");
-        // callback
+        // set callback
         isOpenCallback = true;
-        /*
-        if (cbOpen != null) {
-          cbOpen();
-        }
-        */
       }
 
       private void onClose(object obj, CloseEventArgs e) {
@@ -121,14 +121,9 @@ namespace Network {
         _log("close reason : " + e.Reason);
         ws = null;
 
-        // callback
+        // set callback
         isCloseCallback = true;
         closeCode = e.Code;
-        /*
-        if (cbClose != null) {
-          cbClose(e.Code == (ushort)CloseStatusCode.Normal);
-        }
-        */
       }
 
       private void onError(object obj, ErrorEventArgs e) {
@@ -137,16 +132,7 @@ namespace Network {
 
       private void onMessage(object obj, MessageEventArgs e) {
         if (e.IsBinary) {
-          byte[] cmdId = new byte[4];
-          byte[] data = new byte[e.RawData.Length - 4];
-
-
-          Buffer.BlockCopy(e.RawData, 4, data, 0, data.Length);
-
-          var unpack = new ObjectPacker();
-          var message = unpack.Unpack<string>(data);
-          _log("message length : " + e.RawData.Length);
-          _log("message : " + message);
+          dataQueue.Add(e.RawData);
         } else if (e.IsText) {
           messageQueue.Add(e.Data);
         } else if (e.IsPing) {
@@ -160,11 +146,7 @@ namespace Network {
         }
       }
 
-      private bool isOpenCallback;
-      private bool isCloseCallback;
-      private ushort closeCode;
-
-      private IEnumerator callbackNotify() {
+      private IEnumerator observeForCallback() {
         while (true) {
           if (isOpenCallback) {
             isOpenCallback = false;
@@ -182,6 +164,11 @@ namespace Network {
           foreach(ulong r in removes) {
             sendCallbackMap.Remove(r);
           }
+
+          foreach(var d in dataQueue) {
+            cbMessage(d);
+          }
+          dataQueue.Clear();
 
           foreach(string s in messageQueue) {
             cbMessageString(s);
@@ -223,6 +210,7 @@ namespace Network {
       }
 
       void OnDestroy() {
+        // TODO : check closing
         if (ws != null) {
           closeAtOnce(CloseStatusCode.Normal, "destory client");
         }
