@@ -13,9 +13,7 @@ public class ChatController : MonoBehaviour {
 
   private List<MessageBox> listMessage = new List<MessageBox>();
 
-
-  // Use this for initialization
-  void Start () {
+  public void Initalize () {
     // create list
     Transform parent = messageBoxBase.transform.parent;
     Vector3 pos = messageBoxBase.transform.localPosition;
@@ -43,5 +41,9 @@ public class ChatController : MonoBehaviour {
 
     // new 
     listMessage[listMessage.Count - 1].SetMessage(name, message);
+  }
+
+  public void SetActive(bool isActive) {
+    gameObject.SetActive(isActive);
   }
 }

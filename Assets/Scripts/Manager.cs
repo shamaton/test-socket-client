@@ -15,11 +15,6 @@ public class Manager : MonoBehaviour
   private const string UrlCreate = Url + "get_and_create";
   private const string UrlJoin   = Url + "get";
 
-  [SerializeField] private InputField _inputChat;
-  [SerializeField] private Button buttonChat;
-  [SerializeField] private Button buttonLeave;
-  [SerializeField] private Text ReceiveMessage;
-
   private enum typeStep {
     Entry,
     Connecting,
@@ -43,10 +38,10 @@ public class Manager : MonoBehaviour
 
   private int userId;
 
-  public struct chatInfo {
+  public struct ChatInfo {
     public int    RangeType;
     public int    RangeId;
-    public int    UserId;
+    public int    FromId;
     public string Name;
     public string Message;
   }
@@ -64,6 +59,9 @@ public class Manager : MonoBehaviour
     sock.cbClose         = callbackSocketClose;
     sock.cbMessageString = callbackMessageString;
     sock.cbMessage       = callbackMessage;
+
+    windowChat.cbLeaveRoom   = callbackLeaveRoom;
+    windowChat.cbSendMessage = callbackSendMessage;
 
 	  // register onMessage callback map
     mapReceiveFunc[1] = receiveChat;
@@ -110,23 +108,37 @@ public class Manager : MonoBehaviour
     }
   }
 
-  public void OnButtonChat() {
-    if (_inputChat.text.Length > 0) {
-      chatInfo c = new chatInfo();
-      c.UserId    = userId;
+  private void callbackSendMessage(WindowChat.TypeChat rangeType, int rangeId, string message) {
+    if (message.Length > 0) {
+      ChatInfo c = new ChatInfo();
+      c.FromId    = userId;
       c.Name      = windowEntryName.userName;
-      c.RangeType = 1;
-      c.RangeId   = -1;
-      c.Message   = _inputChat.text;
+      c.Message   = message;
+
+      c.RangeType = (int)rangeType;
+
+      switch (rangeType) {
+      case WindowChat.TypeChat.World:
+        c.RangeId   = -1;
+        break;
+      
+      case WindowChat.TypeChat.Group:
+        c.RangeId = windowEntryName.groupId;
+        break;
+
+      case WindowChat.TypeChat.Private:
+        c.RangeId = rangeId;
+        break;
+      }
+
       var result = makeData(1, c);
       sock.Send(result);
     }
   }
 
-  public void OnButtonLeave() {
+  private void callbackLeaveRoom() {
     byte[] d = BitConverter.GetBytes(true);
     byte[] result = makeData(0, d);
-    setActiveChat(false);
     sock.Send(result, callbackLeave);
 
     curStep = typeStep.Leaving;
@@ -139,14 +151,6 @@ public class Manager : MonoBehaviour
     Debug.Log("callback lievae");
     sock.Close();
   }
-
-  private void setActiveChat(bool isActive) {
-    _inputChat.interactable = isActive;
-    buttonChat.interactable = isActive;
-    _inputChat.text = "";
-    buttonLeave.interactable = isActive;
-  }
-
 
   private byte[] makeData(int no, object obj) {
 
@@ -166,7 +170,6 @@ public class Manager : MonoBehaviour
 
   private void callbackSocketOpen() {
     Debug.Log("open");
-    setActiveChat(true);
   }
 
   private void callbackSocketClose(bool wasCloseSafe) {
@@ -189,20 +192,11 @@ public class Manager : MonoBehaviour
   }
 
   private void callbackMessageString(string str) {
-    ReceiveMessage.text = str;
   }
 
   private void receiveChat(byte[] data) {
     ObjectPacker unpack = new ObjectPacker();
-    chatInfo info = unpack.Unpack<chatInfo>(data);
-
-    /*
-    Debug.Log(info.RangeType);
-    Debug.Log(info.RangeId);
-    Debug.Log(info.UserId);
-    Debug.Log(info.Name);
-    Debug.Log(info.Message);
-    */
-    windowChat.SetMessage(info.Name , info.Message);
+    ChatInfo info = unpack.Unpack<ChatInfo>(data);
+    windowChat.SetMessage(info);
   }
 }

@@ -22,6 +22,13 @@ public class MessageBox : MonoBehaviour {
     colon.SetActive(false);
   }
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// <summary>
+  /// update message box contents.
+  /// </summary>
+  /// <param name="name">Name.</param>
+  /// <param name="message">Message.</param>
+  /////////////////////////////////////////////////////////////////////////////////////////////////
   public void SetMessage(string name, string message) {
     textName.text = name;
     textMessage.text = message;
