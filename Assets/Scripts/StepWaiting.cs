@@ -12,7 +12,7 @@ public class StepWaiting : MonoBehaviour {
 
   private Coroutine cor;
 
-  public void SetActive(bool isActive) {
+  public void SetActive(bool isActive, string statusStr = "") {
     if (!isActive && cor != null) {
       StopCoroutine(cor);
     }
@@ -20,12 +20,11 @@ public class StepWaiting : MonoBehaviour {
     gameObject.SetActive(isActive);
 
     if (isActive) {
+      if (statusStr.Length > 0) {
+        textStatus.text = statusStr;
+      }
       cor = StartCoroutine(updateDot());
     }
-  }
-
-  public void SetTextStatus(string statusStr) {
-    textStatus.text = statusStr;
   }
 
   private IEnumerator updateDot() {

@@ -75,9 +75,7 @@ public class Test : MonoBehaviour
     case typeStep.Entry:
       if (stepEntryName.isStepComplete) {
         stepEntryName.SetActive(false);
-
-        stepWaiting.SetTextStatus(curStep.ToString());
-        stepWaiting.SetActive(true);
+        stepWaiting.SetActive(true, curStep.ToString());
         // connect
         string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + stepEntryName.groupId.ToString();
         sock.Connect(url);
@@ -135,8 +133,7 @@ public class Test : MonoBehaviour
     curStep = typeStep.Leaving;
 
     panelConnected.SetActive(false);
-    stepWaiting.SetTextStatus(curStep.ToString());
-    stepWaiting.SetActive(true);
+    stepWaiting.SetActive(true, curStep.ToString());
   }
 
   private void callbackLeave(bool b) {
