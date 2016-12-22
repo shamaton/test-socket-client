@@ -17,14 +17,15 @@ public class MessageBox : MonoBehaviour {
 
   void Start() {
     // clear text
-    //textName.text = string.Empty;
-    //textMessage.text = string.Empty;
-    //colon.SetActive(false);
+    textName.text = string.Empty;
+    textMessage.text = string.Empty;
+    colon.SetActive(false);
   }
 
   public void SetMessage(string name, string message) {
     textName.text = name;
     textMessage.text = message;
-    colon.SetActive(true);
+
+    colon.SetActive(message.Length > 0);
   }
 }
