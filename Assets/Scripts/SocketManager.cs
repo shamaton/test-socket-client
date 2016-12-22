@@ -40,7 +40,8 @@ namespace Network {
       private List<byte[]> dataQueue = new List<byte[]>();
       private List<string> messageQueue = new List<string>();
 
-      public bool CanUse { get { return (ws != null && ws.IsAlive); } }
+      public bool CanUse       { get { return (ws != null && ws.IsAlive); } }
+      public bool IsUnavaiable { get { return ws == null; } }
 
       void Start() {
         // ping routine

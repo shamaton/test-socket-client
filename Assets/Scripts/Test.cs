@@ -16,13 +16,26 @@ public class Test : MonoBehaviour
   private const string UrlJoin   = Url + "get";
 
   [SerializeField] private InputField _inputChat;
-  [SerializeField] private InputField _inputRoomNo;
   [SerializeField] private Button buttonChat;
-  [SerializeField] private Button buttonRoomNo;
-  [SerializeField] private Button buttonCreate;
   [SerializeField] private Button buttonLeave;
-  [SerializeField] private ToggleGroup toggleGroupGroupId;
   [SerializeField] private Text ReceiveMessage;
+
+  private enum typeStep {
+    Entry,
+    Connecting,
+    Idle,
+    Leaving
+  }
+  private typeStep curStep;
+
+  private bool isConnected;
+
+  [SerializeField]
+  private StepEntryName stepEntryName;
+  [SerializeField]
+  private StepWaiting   stepWaiting;
+  [SerializeField]
+  private GameObject panelConnected;
 
   // callback map
   private Dictionary<int, Action<byte[]>> mapReceiveFunc = new Dictionary<int, Action<byte[]>>();
@@ -44,9 +57,6 @@ public class Test : MonoBehaviour
     GameObject obj = new GameObject("Socket");
     sock = obj.AddComponent<SocketManager>();
 
-    setActiveChat(false);
-    setActiveRoomNo(true);
-
     // decide user id randomly
     userId = UnityEngine.Random.Range(1, int.MaxValue);
 
@@ -60,35 +70,60 @@ public class Test : MonoBehaviour
     mapReceiveFunc[1] = receiveChat;
 	}
 
-  public void OnButtonChat() {
-    if (_inputChat.text.Length > 0) {
-      chatInfo c = new chatInfo();
-      c.UserId = userId;
-      c.Name = "username";
-      c.RangeType = 1;
-      c.RangeId = -1;
-      c.Message = _inputChat.text;
-      var result = makeData(1, c);
-      sock.Send(result);
+  void Update() {
+    switch (curStep) {
+    case typeStep.Entry:
+      if (stepEntryName.isStepComplete) {
+        stepEntryName.SetActive(false);
+
+        stepWaiting.SetTextStatus(curStep.ToString());
+        stepWaiting.SetActive(true);
+        // connect
+        string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + stepEntryName.groupId.ToString();
+        sock.Connect(url);
+        curStep = typeStep.Connecting;
+      }
+      break;
+
+    case typeStep.Connecting:
+      if (sock.CanUse) {
+        stepWaiting.SetActive(false);
+        panelConnected.SetActive(true);
+        curStep = typeStep.Idle;
+      }
+      break;
+
+    case typeStep.Idle:
+      // do nothing
+      // NOTE : step is changed by leave button.
+      break;
+
+    case typeStep.Leaving:
+      // if socket close
+      if (sock.IsUnavaiable) {
+        stepWaiting.SetActive(false);
+        stepEntryName.Reset();
+        stepEntryName.SetActive(true);
+        curStep = typeStep.Entry;
+      }
+      break;
+
+    default:
+      break;
     }
   }
 
-  public void OnButtonCreate() {
-    setActiveRoomNo(false);
-    sock.Connect(UrlCreate);
-  }
-
-  public void OnButtonEnter() {
-    if (_inputRoomNo.text.Length < 1) return;
-
-    // group id from toggle
-    string label = toggleGroupGroupId.ActiveToggles().First().
-    GetComponentsInChildren<Text>().First(t => t.name == "Label").text;
-    string groupId = (label == "GROUP 1") ? "1" : "2";
-
-    string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + groupId;
-    setActiveRoomNo(false);
-    sock.Connect(url);
+  public void OnButtonChat() {
+    if (_inputChat.text.Length > 0) {
+      chatInfo c = new chatInfo();
+      c.UserId    = userId;
+      c.Name      = stepEntryName.userName;
+      c.RangeType = 1;
+      c.RangeId   = -1;
+      c.Message   = _inputChat.text;
+      var result = makeData(1, c);
+      sock.Send(result);
+    }
   }
 
   public void OnButtonLeave() {
@@ -96,11 +131,16 @@ public class Test : MonoBehaviour
     byte[] result = makeData(0, d);
     setActiveChat(false);
     sock.Send(result, callbackLeave);
+
+    curStep = typeStep.Leaving;
+
+    panelConnected.SetActive(false);
+    stepWaiting.SetTextStatus(curStep.ToString());
+    stepWaiting.SetActive(true);
   }
 
   private void callbackLeave(bool b) {
     Debug.Log("callback lievae");
-    setActiveRoomNo(true);
     sock.Close();
   }
 
@@ -111,14 +151,6 @@ public class Test : MonoBehaviour
     buttonLeave.interactable = isActive;
   }
 
-  private void setActiveRoomNo(bool isActive) {
-    _inputRoomNo.interactable = isActive;
-    buttonRoomNo.interactable = isActive;
-    if (isActive) {
-      _inputRoomNo.text = "";
-    }
-    buttonCreate.interactable = isActive;
-  }
 
   private byte[] makeData(int no, object obj) {
 
@@ -145,7 +177,6 @@ public class Test : MonoBehaviour
     if (wasCloseSafe) {
       Debug.Log("close connection safety.");
     }
-    setActiveRoomNo(true);
   }
 
   private void callbackMessage(byte[] raw) {
@@ -173,5 +204,8 @@ public class Test : MonoBehaviour
     Debug.Log(info.UserId);
     Debug.Log(info.Name);
     Debug.Log(info.Message);
+
+    // とりあえず
+    ReceiveMessage.text = info.Name + " : " + info.Message;
   }
 }
