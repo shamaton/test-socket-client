@@ -35,7 +35,7 @@ public class Test : MonoBehaviour
   [SerializeField]
   private StepWaiting   stepWaiting;
   [SerializeField]
-  private GameObject panelConnected;
+  private WindowChat windowChat;
 
   // callback map
   private Dictionary<int, Action<byte[]>> mapReceiveFunc = new Dictionary<int, Action<byte[]>>();
@@ -86,7 +86,7 @@ public class Test : MonoBehaviour
     case typeStep.Connecting:
       if (sock.CanUse) {
         stepWaiting.SetActive(false);
-        panelConnected.SetActive(true);
+        windowChat.SetActive(true);
         curStep = typeStep.Idle;
       }
       break;
@@ -132,7 +132,7 @@ public class Test : MonoBehaviour
 
     curStep = typeStep.Leaving;
 
-    panelConnected.SetActive(false);
+    windowChat.SetActive(false);
     stepWaiting.SetActive(true, curStep.ToString());
   }
 
@@ -196,13 +196,14 @@ public class Test : MonoBehaviour
   private void receiveChat(byte[] data) {
     ObjectPacker unpack = new ObjectPacker();
     chatInfo info = unpack.Unpack<chatInfo>(data);
+
+    /*
     Debug.Log(info.RangeType);
     Debug.Log(info.RangeId);
     Debug.Log(info.UserId);
     Debug.Log(info.Name);
     Debug.Log(info.Message);
-
-    // とりあえず
-    ReceiveMessage.text = info.Name + " : " + info.Message;
+    */
+    windowChat.SetMessage(info.Name + " : " + info.Message);
   }
 }
