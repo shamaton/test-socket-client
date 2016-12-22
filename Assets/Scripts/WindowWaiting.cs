@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class StepWaiting : MonoBehaviour {
+public class WindowWaiting : MonoBehaviour {
 
   [SerializeField]
   private Text textStatus;

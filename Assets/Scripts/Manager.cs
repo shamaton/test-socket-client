@@ -8,7 +8,7 @@ using System.Linq;
 using MsgPack;
 using Network.Socket;
 
-public class Test : MonoBehaviour
+public class Manager : MonoBehaviour
 {
   // room proc
   private const string Url       = "ws://localhost:8080/";
@@ -28,14 +28,13 @@ public class Test : MonoBehaviour
   }
   private typeStep curStep;
 
-  private bool isConnected;
-
+  [Header("Window")]
   [SerializeField]
-  private StepEntryName stepEntryName;
+  private WindowEntryName windowEntryName;
   [SerializeField]
-  private StepWaiting   stepWaiting;
+  private WindowWaiting   windowWaiting;
   [SerializeField]
-  private WindowChat windowChat;
+  private WindowChat      windowChat;
 
   // callback map
   private Dictionary<int, Action<byte[]>> mapReceiveFunc = new Dictionary<int, Action<byte[]>>();
@@ -73,11 +72,11 @@ public class Test : MonoBehaviour
   void Update() {
     switch (curStep) {
     case typeStep.Entry:
-      if (stepEntryName.isStepComplete) {
-        stepEntryName.SetActive(false);
-        stepWaiting.SetActive(true, curStep.ToString());
+      if (windowEntryName.isStepComplete) {
+        windowEntryName.SetActive(false);
+        windowWaiting.SetActive(true, curStep.ToString());
         // connect
-        string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + stepEntryName.groupId.ToString();
+        string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + windowEntryName.groupId.ToString();
         sock.Connect(url);
         curStep = typeStep.Connecting;
       }
@@ -85,7 +84,7 @@ public class Test : MonoBehaviour
 
     case typeStep.Connecting:
       if (sock.CanUse) {
-        stepWaiting.SetActive(false);
+        windowWaiting.SetActive(false);
         windowChat.SetActive(true);
         curStep = typeStep.Idle;
       }
@@ -99,9 +98,9 @@ public class Test : MonoBehaviour
     case typeStep.Leaving:
       // if socket close
       if (sock.IsUnavaiable) {
-        stepWaiting.SetActive(false);
-        stepEntryName.Reset();
-        stepEntryName.SetActive(true);
+        windowWaiting.SetActive(false);
+        windowEntryName.Reset();
+        windowEntryName.SetActive(true);
         curStep = typeStep.Entry;
       }
       break;
@@ -115,7 +114,7 @@ public class Test : MonoBehaviour
     if (_inputChat.text.Length > 0) {
       chatInfo c = new chatInfo();
       c.UserId    = userId;
-      c.Name      = stepEntryName.userName;
+      c.Name      = windowEntryName.userName;
       c.RangeType = 1;
       c.RangeId   = -1;
       c.Message   = _inputChat.text;
@@ -133,7 +132,7 @@ public class Test : MonoBehaviour
     curStep = typeStep.Leaving;
 
     windowChat.SetActive(false);
-    stepWaiting.SetActive(true, curStep.ToString());
+    windowWaiting.SetActive(true, curStep.ToString());
   }
 
   private void callbackLeave(bool b) {

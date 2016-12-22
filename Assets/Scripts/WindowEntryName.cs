@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class StepEntryName : MonoBehaviour {
+public class WindowEntryName : MonoBehaviour {
   [SerializeField]
   private InputField inputFieldName;
   [SerializeField]
