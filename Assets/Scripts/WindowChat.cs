@@ -72,6 +72,7 @@ public class WindowChat : MonoBehaviour {
     cbSendMessage(curDispChat, -1, message);
 
     // clear text saved.
+    inputFieldMessage.text = string.Empty;
     setInputSaver(string.Empty);
   }
 
@@ -92,10 +93,10 @@ public class WindowChat : MonoBehaviour {
     if (inputSaver.ContainsKey(t.ToString())) {
       message = inputSaver[t.ToString()];
     }
-    inputFieldMessage.text = message;
-    OnChangeValueMessage(message);
     // update
     curDispChat = t;
+    inputFieldMessage.text = message;
+    OnChangeValueMessage(message);
   }
 
   private void setInputSaver(string message) {
