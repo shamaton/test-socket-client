@@ -5,10 +5,10 @@ using UnityEngine.UI;
 
 public class WindowChat : MonoBehaviour {
   [SerializeField]
-  private Text textMessage; // tmp
+  private ChatController[] chatControllers;
 
-  public void SetMessage(string message) {
-    textMessage.text = message;
+  public void SetMessage(string name, string message) {
+    chatControllers[0].UpdateMessageList(name, message);
   }
 
   public void SetActive(bool isActive) {

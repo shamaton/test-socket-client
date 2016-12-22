@@ -203,6 +203,6 @@ public class Manager : MonoBehaviour
     Debug.Log(info.Name);
     Debug.Log(info.Message);
     */
-    windowChat.SetMessage(info.Name + " : " + info.Message);
+    windowChat.SetMessage(info.Name , info.Message);
   }
 }
