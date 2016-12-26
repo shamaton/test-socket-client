@@ -12,14 +12,18 @@ public class MessageBox : MonoBehaviour {
   [SerializeField]
   private GameObject colon;
 
+  private bool isSet;
+
   public string userName { get { return textName.text; } }
   public string message  { get { return textMessage.text; } }
 
   void Start() {
     // clear text
-    textName.text = string.Empty;
-    textMessage.text = string.Empty;
-    colon.SetActive(false);
+    if (!isSet) {
+      textName.text = string.Empty;
+      textMessage.text = string.Empty;
+      colon.SetActive(false);
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,5 +38,6 @@ public class MessageBox : MonoBehaviour {
     textMessage.text = message;
 
     colon.SetActive(message.Length > 0);
+    isSet = true;
   }
 }

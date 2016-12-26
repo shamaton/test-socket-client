@@ -18,11 +18,13 @@ public class WindowChat : MonoBehaviour {
 
   [Header("UI")]
   [SerializeField]
-  private InputField inputFieldMessage;
+  private InputField   inputFieldMessage;
   [SerializeField]
-  private Button buttonSendMessage;
+  private Button       buttonSendMessage;
   [SerializeField]
-  private Button[] buttonTabs;
+  private Button[]     buttonTabs;
+  [SerializeField]
+  private GameObject[] imageNotices;
 
   // save input
   private Dictionary<string, string> inputSaver = new Dictionary<string, string>();
@@ -38,6 +40,7 @@ public class WindowChat : MonoBehaviour {
       chatControllers[i].Initalize();
       chatControllers[i].SetActive(i == 0);
       buttonTabs[i].interactable = (i != 0);
+      imageNotices[i].SetActive(false);
     }
   }
 
@@ -55,6 +58,10 @@ public class WindowChat : MonoBehaviour {
     default:
       Debug.LogError("unkwoun type!! " + info.RangeType);
       break;
+    }
+
+    if (!chatControllers[info.RangeType].isDispEnable) {
+      imageNotices[info.RangeType].SetActive(true);
     }
   }
     
@@ -100,6 +107,9 @@ public class WindowChat : MonoBehaviour {
     // update
     curDispChat = t;
     OnChangeValueMessage(message);
+
+    // notice
+    imageNotices[(int)t].SetActive(false);
   }
 
   private void setInputSaver(string message) {

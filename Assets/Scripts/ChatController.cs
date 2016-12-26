@@ -14,6 +14,8 @@ public class ChatController : MonoBehaviour {
 
   private List<MessageBox> listMessage = new List<MessageBox>();
 
+  public bool isDispEnable { get { return gameObject.activeSelf; } }
+
   public void Initalize () {
     // create list
     Transform parent = messageBoxBase.transform.parent;
