@@ -7,6 +7,7 @@ public class ChatController : MonoBehaviour {
 
   private const float IntervalHeight = 20f;
   private const int ListSize = 12;
+  private int curIndex = 0;
 
   [SerializeField]
   private GameObject messageBoxBase;
@@ -34,13 +35,21 @@ public class ChatController : MonoBehaviour {
   }
 
   public void UpdateMessageList(string name, string message) {
-    // old
-    for (int i = 0; i < listMessage.Count - 1; i++) {
-      listMessage[i].SetMessage(listMessage[i + 1].userName, listMessage[i + 1].message);
+
+    if (curIndex < listMessage.Count) {
+      listMessage[curIndex].SetMessage(name, message);
+      curIndex++;
+    }
+    else { // text scroll if text put on all messagebox
+      // old
+      for (int i = 0; i < listMessage.Count - 1; i++) {
+        listMessage[i].SetMessage(listMessage[i + 1].userName, listMessage[i + 1].message);
+      }
+
+      // new 
+      listMessage[listMessage.Count - 1].SetMessage(name, message);  
     }
 
-    // new 
-    listMessage[listMessage.Count - 1].SetMessage(name, message);
   }
 
   public void SetActive(bool isActive) {
