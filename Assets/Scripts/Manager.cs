@@ -11,9 +11,9 @@ using Network.Socket;
 public class Manager : MonoBehaviour
 {
   // room proc
-  private const string Url       = "ws://localhost:8080/";
-  private const string UrlCreate = Url + "get_and_create";
-  private const string UrlJoin   = Url + "get";
+  //private const string Url       = "ws://188.166.255.127:8080/";
+  private const string Host     = "ws://localhost:8080/";
+  private const string UrlJoin = Host + "get";
 
   private enum typeStep {
     Entry,
