@@ -59,6 +59,10 @@ public class WindowChat : MonoBehaviour {
   }
     
   public void OnChangeValueMessage(string message) {
+
+    message = message.Replace("\r", "").Replace("\n", "");
+    inputFieldMessage.text = message;
+
     // save text
     setInputSaver(message);
 
@@ -95,7 +99,6 @@ public class WindowChat : MonoBehaviour {
     }
     // update
     curDispChat = t;
-    inputFieldMessage.text = message;
     OnChangeValueMessage(message);
   }
 

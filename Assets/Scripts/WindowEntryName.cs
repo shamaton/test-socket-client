@@ -17,6 +17,9 @@ public class WindowEntryName : MonoBehaviour {
   public bool   isStepComplete { get; private set; }
 
   public void OnChangeValueName(string name) {
+    // delete new line
+    name = name.Replace("\r", "").Replace("\n", "");
+    inputFieldName.text = name;
     // update button interaction
     bool enableButton = (name.Length > 0);
     buttonEntry.interactable = enableButton;
