@@ -129,6 +129,12 @@ public class WindowChat : MonoBehaviour {
     }
   }
 
+  public void ClearRecievedMessage() {
+    foreach (ChatController cc in chatControllers) {
+      cc.ClearMessage();
+    }
+  }
+
   public void SetActive(bool isActive) {
     gameObject.SetActive(isActive);
   }

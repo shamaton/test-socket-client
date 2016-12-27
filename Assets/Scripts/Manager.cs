@@ -84,6 +84,7 @@ public class Manager : MonoBehaviour
       if (sock.CanUse) {
         windowWaiting.SetActive(false);
         windowChat.SetActive(true);
+        windowChat.ClearRecievedMessage();
         curStep = typeStep.Idle;
       }
       break;

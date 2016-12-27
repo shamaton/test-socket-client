@@ -29,6 +29,7 @@ public class ChatController : MonoBehaviour {
       t.localPosition = new Vector3(pos.x, pos.y - IntervalHeight * i, pos.z);
 
       MessageBox mb = o.GetComponent<MessageBox>();
+      mb.SetMessage(string.Empty, string.Empty);
       listMessage.Add(mb);
     }
 
@@ -52,6 +53,12 @@ public class ChatController : MonoBehaviour {
       listMessage[listMessage.Count - 1].SetMessage(name, message);  
     }
 
+  }
+
+  public void ClearMessage() {
+    foreach (var m in listMessage) {
+      m.SetMessage(string.Empty, string.Empty);
+    }
   }
 
   public void SetActive(bool isActive) {
