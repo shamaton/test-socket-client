@@ -31,20 +31,15 @@ public class Manager : MonoBehaviour
   [SerializeField]
   private WindowChat      windowChat;
 
+  // online menber
+  private Dictionary<int, string> mapMember = new Dictionary<int, string>();
+
   // callback map
   private Dictionary<int, Action<byte[]>> mapReceiveFunc = new Dictionary<int, Action<byte[]>>();
 
   private SocketManager sock;
 
   private int userId;
-
-  public struct ChatInfo {
-    public int    RangeType;
-    public int    RangeId;
-    public int    FromId;
-    public string Name;
-    public string Message;
-  }
 
 	// Use this for initialization
 	void Start () {
@@ -65,6 +60,8 @@ public class Manager : MonoBehaviour
 
 	  // register onMessage callback map
     mapReceiveFunc[1] = receiveChat;
+    mapReceiveFunc[2] = receiveStatus;
+    mapReceiveFunc[3] = receiveMemberInfo;
 	}
 
   void Update() {
@@ -109,9 +106,18 @@ public class Manager : MonoBehaviour
     }
   }
 
+  private void sendStatus(int status, Action<bool> cb = null) {
+    Data.StatusInfo info = new Data.StatusInfo();
+    info.UserId   = userId;
+    info.UserName = windowEntryName.userName;
+    info.Status   = status;
+    byte[] result = makeData(2, info);
+    sock.Send(result, cb);
+  }
+
   private void callbackSendMessage(WindowChat.TypeChat rangeType, int rangeId, string message) {
     if (message.Length > 0) {
-      ChatInfo c = new ChatInfo();
+      Data.ChatInfo c = new Data.ChatInfo();
       c.FromId    = userId;
       c.Name      = windowEntryName.userName;
       c.Message   = message;
@@ -138,19 +144,23 @@ public class Manager : MonoBehaviour
   }
 
   private void callbackLeaveRoom() {
+    /*
     byte[] d = BitConverter.GetBytes(true);
     byte[] result = makeData(0, d);
     sock.Send(result, callbackLeave);
+    */
+
+    // leave and close
+    Action<bool> cb = (b) => {
+      sock.Close();
+    };
+    sendStatus(0, cb);
+
 
     curStep = typeStep.Leaving;
 
     windowChat.SetActive(false);
     windowWaiting.SetActive(true, curStep.ToString());
-  }
-
-  private void callbackLeave(bool b) {
-    Debug.Log("callback lievae");
-    sock.Close();
   }
 
   private byte[] makeData(int no, object obj) {
@@ -171,6 +181,15 @@ public class Manager : MonoBehaviour
 
   private void callbackSocketOpen() {
     Debug.Log("open");
+
+    // get member info
+    Data.SendMemberInfo info = new Data.SendMemberInfo();
+    info.UserId = userId;
+    byte[] data = makeData(3, info);
+    sock.Send(data);
+
+    // login notice
+    sendStatus(1);
   }
 
   private void callbackSocketClose(bool wasCloseSafe) {
@@ -197,7 +216,36 @@ public class Manager : MonoBehaviour
 
   private void receiveChat(byte[] data) {
     ObjectPacker unpack = new ObjectPacker();
-    ChatInfo info = unpack.Unpack<ChatInfo>(data);
+    Data.ChatInfo info = unpack.Unpack<Data.ChatInfo>(data);
     windowChat.SetMessage(info);
+  }
+
+  private void receiveStatus(byte[] data) {
+    ObjectPacker unpack = new ObjectPacker();
+    Data.StatusInfo info = unpack.Unpack<Data.StatusInfo>(data);
+    updateMember(info);
+  }
+
+  private void receiveMemberInfo(byte[] data) {
+    ObjectPacker unpack = new ObjectPacker();
+    Data.StatusInfo[] infos = unpack.Unpack<Data.StatusInfo[]>(data);
+
+    foreach (Data.StatusInfo info in infos) {
+      updateMember(info);
+    }
+  }
+
+  private void updateMember(Data.StatusInfo info) {
+    // not regist myself
+    if (info.UserId == userId) return;
+
+    if (info.Status < 1 && mapMember.ContainsKey(info.UserId)) {
+      Debug.Log("remove!!" + info.UserId.ToString() + " : " + info.UserName);
+      mapMember.Remove(info.UserId);
+    }
+    else {
+      Debug.Log("regist!!" + info.UserId.ToString() + " : " + info.UserName);
+      mapMember[info.UserId] = info.UserName;
+    }
   }
 }

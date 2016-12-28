@@ -44,7 +44,7 @@ public class WindowChat : MonoBehaviour {
     }
   }
 
-  public void SetMessage(Manager.ChatInfo info) {
+  public void SetMessage(Data.ChatInfo info) {
     switch ((TypeChat)info.RangeType) {
     case TypeChat.World:
     case TypeChat.Group:
