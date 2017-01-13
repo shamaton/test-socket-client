@@ -7,12 +7,12 @@ public class ChatController : MonoBehaviour {
 
   private const float IntervalHeight = 20f;
   private const int ListSize = 12;
-  private int curIndex = 0;
+  protected int curIndex = 0;
 
   [SerializeField]
   private GameObject messageBoxBase;
 
-  private List<MessageBox> listMessage = new List<MessageBox>();
+  protected List<MessageBox> listMessage = new List<MessageBox>();
 
   public bool isDispEnable { get { return gameObject.activeSelf; } }
 
@@ -55,7 +55,7 @@ public class ChatController : MonoBehaviour {
 
   }
 
-  public void ClearMessage() {
+  public virtual void ClearMessage() {
     foreach (var m in listMessage) {
       m.SetMessage(string.Empty, string.Empty);
     }

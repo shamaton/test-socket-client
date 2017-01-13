@@ -71,7 +71,8 @@ public class Manager : MonoBehaviour
         windowEntryName.SetActive(false);
         windowWaiting.SetActive(true, curStep.ToString());
         // connect
-        string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + windowEntryName.groupId.ToString();
+        string url = UrlJoin + "?uid=" + userId.ToString() + "&gid=" + windowEntryName.groupId.ToString() + "&name=" + windowEntryName.userName;
+        Debug.Log(url);
         sock.Connect(url);
         curStep = typeStep.Connecting;
       }
@@ -217,7 +218,7 @@ public class Manager : MonoBehaviour
   private void receiveChat(byte[] data) {
     ObjectPacker unpack = new ObjectPacker();
     Data.ChatInfo info = unpack.Unpack<Data.ChatInfo>(data);
-    windowChat.SetMessage(info);
+    windowChat.SetMessage(info, userId);
   }
 
   private void receiveStatus(byte[] data) {
@@ -247,5 +248,6 @@ public class Manager : MonoBehaviour
       Debug.Log("regist!!" + info.UserId.ToString() + " : " + info.UserName);
       mapMember[info.UserId] = info.UserName;
     }
+    windowChat.UpdateMemberList(mapMember);
   }
 }

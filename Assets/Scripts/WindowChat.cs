@@ -12,6 +12,7 @@ public class WindowChat : MonoBehaviour {
     Private,
     NrTypeChat
   }
+  private TypeChat curDispChat;
 
   [SerializeField]
   private ChatController[] chatControllers;
@@ -29,8 +30,6 @@ public class WindowChat : MonoBehaviour {
   // save input
   private Dictionary<string, string> inputSaver = new Dictionary<string, string>();
 
-  private TypeChat curDispChat;
-
   // callback
   public Action cbLeaveRoom;
   public Action<TypeChat, int, string> cbSendMessage;
@@ -42,9 +41,10 @@ public class WindowChat : MonoBehaviour {
       buttonTabs[i].interactable = (i != 0);
       imageNotices[i].SetActive(false);
     }
+    userListBox.SetActive(false);
   }
 
-  public void SetMessage(Data.ChatInfo info) {
+  public void SetMessage(Data.ChatInfo info, int myUserId) {
     switch ((TypeChat)info.RangeType) {
     case TypeChat.World:
     case TypeChat.Group:
@@ -52,6 +52,12 @@ public class WindowChat : MonoBehaviour {
       break;
 
     case TypeChat.Private:
+      ChatControllerPrivate ccp = (ChatControllerPrivate)chatControllers[info.RangeType];
+      if (info.FromId == myUserId) {
+        ccp.UpdateMessageList(info.RangeId, info.Name, info.Message, (curUserId == info.RangeId));
+      } else {
+        ccp.UpdateMessageList(info.FromId, info.Name, info.Message, (curUserId == info.FromId));
+      }
       // todo
       break;
 
@@ -79,8 +85,12 @@ public class WindowChat : MonoBehaviour {
 
   public void OnButtonSendMessage() {
     string message = inputFieldMessage.text;
+
+    // if type is private, set user_id
+    int rangeId = (curDispChat == TypeChat.Private) ? curUserId : -1;
+
     // callback
-    cbSendMessage(curDispChat, -1, message);
+    cbSendMessage(curDispChat, rangeId, message);
 
     // clear text saved.
     inputFieldMessage.text = string.Empty;
@@ -100,16 +110,21 @@ public class WindowChat : MonoBehaviour {
     buttonTabs[(int)curDispChat].interactable = true;
     buttonTabs[(int)t].interactable = false;
     // set text
-    string message = string.Empty;
-    if (inputSaver.ContainsKey(t.ToString())) {
-      message = inputSaver[t.ToString()];
-    }
+    string message = getInputSaver();
     // update
     curDispChat = t;
     OnChangeValueMessage(message);
 
     // notice
     imageNotices[(int)t].SetActive(false);
+
+    // private only
+    userListBox.SetActive(t == TypeChat.Private);
+    if (t == TypeChat.Private) {
+      inputFieldMessage.interactable = (curUserId > 0);
+    } else {
+      inputFieldMessage.interactable = true;
+    }
   }
 
   private void setInputSaver(string message) {
@@ -120,13 +135,40 @@ public class WindowChat : MonoBehaviour {
       break;
 
     case TypeChat.Private:
-      // todo
+      inputSaver[curDispChat.ToString() + "_" + curUserId.ToString()] = message;
       break;
 
     default:
       // do nothing
       break;
     }
+  }
+
+  private string getInputSaver() {
+    string message = string.Empty;
+    string key = string.Empty;
+
+    switch (curDispChat) {
+    case TypeChat.World:
+    case TypeChat.Group:
+      key = curDispChat.ToString();
+      if (inputSaver.ContainsKey(key)) {
+        message = inputSaver[key];
+      }
+      break;
+
+    case TypeChat.Private:
+      key = curDispChat.ToString() + "_" + curUserId.ToString();
+      if (inputSaver.ContainsKey(key)) {
+        message = inputSaver[key];
+      }
+      break;
+
+    default:
+      // do nothing
+      break;
+    }
+    return message;
   }
 
   public void ClearRecievedMessage() {
@@ -138,4 +180,69 @@ public class WindowChat : MonoBehaviour {
   public void SetActive(bool isActive) {
     gameObject.SetActive(isActive);
   }
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  /// for private chat
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  [SerializeField]
+  private GameObject userListBox;
+  [SerializeField]
+  private Button buttonLeft;
+  [SerializeField]
+  private Button buttonRight;
+  [SerializeField]
+  private Text textUserName;
+
+  private Dictionary<int, string> memberMap = new Dictionary<int, string>();
+  private List<int> memberList = new List<int>();
+
+  private int curUserId = -1;
+  private int curMemberListIndex = 0;
+
+  public void OnButtonPrivateLeft() {
+    updateCurrent(-1);
+  }
+
+  public void OnButtonPrivateRight() {
+    updateCurrent(1);
+  }
+
+  private void updateCurrent(int add) {
+    if (memberList.Count < 1) return;
+
+    curMemberListIndex = (curMemberListIndex + memberList.Count + add) % memberList.Count;
+    curUserId = memberList[curMemberListIndex];
+    textUserName.text = memberMap[curUserId];
+
+    ChatControllerPrivate ccp = (ChatControllerPrivate)chatControllers[(int)TypeChat.Private];
+    ccp.SwitchDispMessage(curUserId);
+
+    inputFieldMessage.interactable = true;
+  }
+
+  public void UpdateMemberList(Dictionary<int, string> map) {
+    memberList.Clear();
+    memberMap = map;
+    memberList.AddRange(map.Keys);
+
+    // current check
+    if (memberMap.ContainsKey(curUserId)) {
+      curMemberListIndex = memberList.IndexOf(curUserId);
+      inputFieldMessage.interactable = true;
+    } else {
+      curMemberListIndex = 0;
+      curUserId = -1;
+      textUserName.text = string.Empty;
+
+      ChatControllerPrivate ccp = (ChatControllerPrivate)chatControllers[(int)TypeChat.Private];
+      ccp.ClearMessageDispOnly();
+
+      inputFieldMessage.interactable = false;
+    }
+
+    // update button
+    buttonLeft.interactable  = (memberList.Count > 0);
+    buttonRight.interactable = (memberList.Count > 0);
+  }
+
 }
